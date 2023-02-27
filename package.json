@@ -1,0 +1,17 @@
+{
+  "name": "com.howegame.gameframework.fairygui",
+  "displayName": "Game Framework - FairyGUI",
+  "category": "Game Framework",
+  "description": "A package of FairyGUI based on GameFramework.",
+  "version": "2021.5.31",
+  "unity": "2017.1",
+  "keywords": [
+    "Game Framework"
+  ],
+  "author": {
+    "name": "SunHowe",
+    "email": "tosunhowe@gmail.com"
+  },
+  "dependencies": {
+  }
+}

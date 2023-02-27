@@ -1,0 +1,18 @@
+{
+    "name": "GameFramework.FairyGUI.Runtime",
+    "rootNamespace": "GameFramework.FairyGUI.Runtime",
+    "references": [
+        "GUID:957fd632857f4b642bbfe15a0f413453",
+        "GUID:363c5eb08ff8e6a439b85e37b8c20d96",
+        "GUID:420239ca3fd944414bcf616a236b119c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

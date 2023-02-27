@@ -375,6 +375,27 @@ namespace FairyGUI
 
             return pkg;
         }
+        
+        /// <summary>
+        /// Load Package async by custom load method.
+        /// </summary>
+        /// <param name="buffer">Buffer of description file data</param>
+        /// <param name="assetNamePrefix">refix of the resource file name. The file name would be in format of 'assetNamePrefix_resFileName'. It can be empty.</param>
+        /// <param name="loadFunc">Load method</param>
+        /// <returns></returns>
+        public static UIPackage AddPackage(ByteBuffer buffer, string assetNamePrefix, LoadResourceAsync loadFunc)
+        {
+            UIPackage pkg = new UIPackage();
+            pkg._loadAsyncFunc = loadFunc;
+            if (!pkg.LoadPackage(buffer, assetNamePrefix))
+                return null;
+
+            _packageInstById[pkg.id] = pkg;
+            _packageInstByName[pkg.name] = pkg;
+            _packageList.Add(pkg);
+
+            return pkg;
+        }
 
         /// <summary>
         /// Remove a package. All resources in this package will be disposed.

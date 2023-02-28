@@ -50,7 +50,7 @@ namespace GameFramework.FairyGUI.Runtime
 
         private void LoadFunc(string assetName, string extension, System.Type assetType, PackageItem item)
         {
-            var assetPath = Utility.Text.Format("{0}/{1}.{2}", item.owner.assetPath, assetName, extension);
+            var assetPath = Utility.Text.Format("{0}{1}", assetName, extension);
             
             void LoadAssetSuccessCallback(string _, object asset, float duration, object userdata)
             {

@@ -8,15 +8,11 @@ namespace GameFramework.FairyGUI.Runtime
     public interface IUIFormLogic
     {
         /// <summary>
-        /// 界面组件初始化
-        /// </summary>
-        void OnInitContentPane(GComponent contentPane);
-        
-        /// <summary>
         /// 界面初始化。
         /// </summary>
+        /// <param name="uiForm">窗口实例</param>
         /// <param name="userData">用户自定义数据。</param>
-        void OnInit(object userData);
+        void OnInit(FairyGUIForm uiForm, object userData);
 
         /// <summary>
         /// 界面回收。

@@ -103,18 +103,11 @@ namespace GameFramework.FairyGUI.Runtime
                 return;
             }
 
-            try
-            {
-                m_UIFormLogic.OnInitContentPane(m_ContentPane);
-            }
-            catch (Exception exception)
-            {
-                Log.Error("UI form '[{0}]{1}' OnInitContentPane with exception '{2}'.", m_SerialId.ToString(), m_UIFormAssetName, exception.ToString());
-            }
+            m_ContentPane.fairyBatching = true;
 
             try
             {
-                m_UIFormLogic.OnInit(userData);
+                m_UIFormLogic.OnInit(this, userData);
             }
             catch (Exception exception)
             {

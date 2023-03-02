@@ -167,9 +167,6 @@ namespace GameFramework.FairyGUI.Runtime
             {
                 Log.Error("UI form '[{0}]{1}' OnClose with exception '{2}'.", m_SerialId.ToString(), m_UIFormAssetName, exception.ToString());
             }
-
-            if (m_ContentPane.isDisposed)
-                return;
             
             GRoot.inst.RemoveChild(m_ContentPane);
         }
@@ -187,9 +184,6 @@ namespace GameFramework.FairyGUI.Runtime
             {
                 Log.Error("UI form '[{0}]{1}' OnPause with exception '{2}'.", m_SerialId.ToString(), m_UIFormAssetName, exception.ToString());
             }
-
-            if (m_ContentPane.isDisposed)
-                return;
             
             m_ContentPane.visible = false;
         }

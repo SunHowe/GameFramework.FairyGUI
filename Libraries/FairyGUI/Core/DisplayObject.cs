@@ -289,20 +289,24 @@ namespace FairyGUI
             get { return _visible; }
             set
             {
-                if (_visible != value)
+                if (_visible == value) 
+                    return;
+                
+                _visible = value;
+                _flags |= Flags.OutlineChanged;
+
+                if ((_flags & Flags.GameObjectDisposed) != 0)
+                    return;
+                
+                if (parent != null && _visible)
                 {
-                    _visible = value;
-                    _flags |= Flags.OutlineChanged;
-                    if (parent != null && _visible)
-                    {
-                        gameObject.SetActive(true);
-                        InvalidateBatchingState();
-                        if (this is Container)
-                            ((Container)this).InvalidateBatchingState(true);
-                    }
-                    else
-                        gameObject.SetActive(false);
+                    gameObject.SetActive(true);
+                    InvalidateBatchingState();
+                    if (this is Container)
+                        ((Container)this).InvalidateBatchingState(true);
                 }
+                else
+                    gameObject.SetActive(false);
             }
         }
 

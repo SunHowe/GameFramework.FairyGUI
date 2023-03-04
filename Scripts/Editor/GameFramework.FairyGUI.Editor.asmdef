@@ -1,0 +1,18 @@
+{
+    "name": "GameFramework.FairyGUI.Editor",
+    "rootNamespace": "GameFramework.FairyGUI.Editor",
+    "references": [
+        "GUID:420239ca3fd944414bcf616a236b119c",
+        "GUID:236531144c3a643ffaf1ab7bd6bbddb7",
+        "GUID:2373f786d14518f44b0f475db77ba4de"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

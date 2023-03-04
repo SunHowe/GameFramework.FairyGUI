@@ -43,19 +43,19 @@ namespace GameFramework.FairyGUI.Runtime
             if (m_LoadingBinaryCount > 0 || m_LoadBinarySuccessCount > 0)
                 return;
 
-            if (m_FairyGUISettings.UIPackageNames == null || m_FairyGUISettings.UIPackageNames.Length == 0)
+            if (m_FairyGUISettings.uiPackageNames == null || m_FairyGUISettings.uiPackageNames.Length == 0)
             {
                 OnLoadAllPackagesSuccess();
                 return;
             }
 
-            m_LoadingBinaryCount = m_FairyGUISettings.UIPackageNames.Length;
+            m_LoadingBinaryCount = m_FairyGUISettings.uiPackageNames.Length;
             m_LoadBinarySuccessCount = 0;
             m_LoadBinaryFailureCount = 0;
 
             m_LoadBinaryCallbacks ??= new LoadBinaryCallbacks(LoadBinarySuccessCallback, LoadBinaryFailureCallback);
 
-            foreach (var packageName in m_FairyGUISettings.UIPackageNames)
+            foreach (var packageName in m_FairyGUISettings.uiPackageNames)
                 m_ResourceComponent.LoadBinary(GetUIPackageAssetPath(packageName), m_LoadBinaryCallbacks, packageName);
         }
 
@@ -85,7 +85,7 @@ namespace GameFramework.FairyGUI.Runtime
             var buffer = new ByteBuffer(((TextAsset)asset).bytes);
             var packageName = ByteBufferUtility.GetPackageName(buffer);
 
-            var gObject = UIPackage.GetByName(packageName).CreateObject(m_FairyGUISettings.UIFormComponentName);
+            var gObject = UIPackage.GetByName(packageName).CreateObject(m_FairyGUISettings.uiFormComponentName);
             if (gObject == null)
                 return null;
             
@@ -203,7 +203,7 @@ namespace GameFramework.FairyGUI.Runtime
             if (m_FairyGUISettings == null)
                 throw new Exception("请先调用InitSettings方法初始化FairyGUI组件的设置");
 
-            return Utility.Text.Format("{0}/{1}", m_FairyGUISettings.UIAssetsRoot, packageName);
+            return Utility.Text.Format("{0}/{1}", m_FairyGUISettings.uiAssetsRoot, packageName);
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace GameFramework.FairyGUI.Runtime
             if (m_FairyGUISettings == null)
                 throw new Exception("请先调用InitSettings方法初始化FairyGUI组件的设置");
 
-            return Utility.Text.Format("{0}/{1}{2}", m_FairyGUISettings.UIAssetsRoot, packageName, m_FairyGUISettings.UIByteSuffix);
+            return Utility.Text.Format("{0}/{1}{2}", m_FairyGUISettings.uiAssetsRoot, packageName, m_FairyGUISettings.uiByteSuffix);
         }
 
         #endregion

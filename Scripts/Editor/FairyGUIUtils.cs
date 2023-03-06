@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using GameFramework.FairyGUI.Runtime;
 
 namespace GameFramework.FairyGUI.Editor
 {
@@ -10,13 +9,13 @@ namespace GameFramework.FairyGUI.Editor
         /// <summary>
         /// 获取UIPackage文件名列表
         /// </summary>
-        public static List<string> GetUIPackageFileNames(FairyGUISettings settings)
+        public static List<string> GetUIPackageFileNames(string uiAssetsRoot, string uiByteSuffix)
         {
-            return (from file in Directory.GetFiles(settings.uiAssetsRoot)
-                    where file.EndsWith(settings.uiByteSuffix)
+            return (from file in Directory.GetFiles(uiAssetsRoot)
+                    where file.EndsWith(uiByteSuffix)
                     select Path.GetFileName(file)
                     into fileName
-                    select fileName[..^settings.uiByteSuffix.Length])
+                    select fileName[..^uiByteSuffix.Length])
                 .ToList();
         }
     }

@@ -58,18 +58,38 @@ namespace GameFramework.FairyGUI.Editor
         [Serializable]
         public sealed class FairyGUIExportSettings
         {
+            public const string StrReplaceKeyPackageName = "{PackageName}";
+            
             [Header("运行时配置文件")]
             public FairyGUISettings runtimeSettings;
 
-            [Header("UI窗体代码导出根目录")]
-            public string uiFormCodeExportRoot = "Assets/GameMain/Scripts/Game.Hotfix.UI/{PackageName}/Forms";
+            [Header("UI窗体代码命名空间(支持占位符{PackageName})")]
+            public string uiFormCodeNamespace = "Game.Hotfix.UI.{PackageName}.Form";
+
+            [Header("UI窗体代码导出根目录(支持占位符{PackageName})")]
+            public string uiFormCodeExportRoot = "Assets/GameMain/Scripts/Game.Hotfix.UI/{PackageName}/Form";
+
+            [Header("UI窗体基类")]
+            public string uiFormBaseTypeName = "GameFramework.FairyGUI.Runtime.FairyGUIFormLogic";
+
+            [Header("UI窗体视图实例属性名")]
+            public string uiFormContentPanePropertyName = "ContentPane";
 
             [Header("UI组件命名正则")]
             public string uiComponentNameRegex = "Component$";
 
-            [Header("UI组件代码导出根目录")]
-            public string uiComponentCodeExportRoot = "Assets/GameMain/Scripts/Game.Hotfix.UI/{PackageName}/Components";
+            [Header("UI组件代码命名空间(支持占位符{PackageName})")]
+            public string uiComponentCodeNamespace = "Game.Hotfix.UI.{PackageName}.Component";
 
+            [Header("UI组件代码导出根目录(支持占位符{PackageName})")]
+            public string uiComponentCodeExportRoot = "Assets/GameMain/Scripts/Game.Hotfix.UI/{PackageName}/Component";
+
+            [Header("UI绑定代码文件后缀")]
+            public string uiBindingCodeFileSuffix = ".Bindings";
+
+            [Header("UI绑定代码函数名")]
+            public string uiBidingMethodName = "InitBindings";
+            
             [Header("是否忽略默认名字的子节点(n+数字)")]
             public bool ignoreDefaultNameChildren = true;
 

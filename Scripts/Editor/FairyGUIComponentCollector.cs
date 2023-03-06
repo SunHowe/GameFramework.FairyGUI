@@ -5,13 +5,13 @@ using FairyGUI;
 namespace GameFramework.FairyGUI.Editor
 {
     /// <summary>
-    /// FairyGUI对象收集器
+    /// FairyGUI组件收集器
     /// </summary>
-    public static class FairyGUIObjectCollector
+    public static class FairyGUIComponentCollector
     {
-        public static List<UIComponent> Collect(FairyGUIEditorSettings.FairyGUIExportSettings settings)
+        public static List<UIComponent> Collect(string uiAssetsRoot, string uiByteSuffix)
         {
-            AddPackages(settings);
+            AddPackages(uiAssetsRoot, uiByteSuffix);
 
             var components = new List<UIComponent>();
             foreach (var package in UIPackage.GetPackages())
@@ -44,6 +44,7 @@ namespace GameFramework.FairyGUI.Editor
             return new UIComponent
             {
                 Id = FormatId(item.owner.id, item.id),
+                PackageName = item.owner.name,
                 Name = item.name,
                 Nodes = LoadComponentNodes(item),
                 Controllers = LoadControllers(item),
@@ -56,9 +57,9 @@ namespace GameFramework.FairyGUI.Editor
                     ObjectType.ProgressBar => typeof(GProgressBar),
                     ObjectType.Slider => typeof(GSlider),
                     ObjectType.ScrollBar => typeof(GScrollBar),
-                    
+
                     ObjectType.Component => typeof(GComponent),
-                    
+
                     _ => throw new ArgumentOutOfRangeException()
                 }
             };
@@ -166,16 +167,16 @@ namespace GameFramework.FairyGUI.Editor
             return transitions;
         }
 
-        private static void AddPackages(FairyGUIEditorSettings.FairyGUIExportSettings settings)
+        private static void AddPackages(string uiAssetsRoot, string uiByteSuffix)
         {
             UIPackage.RemoveAllPackages();
 
-            if (settings.runtimeSettings == null)
+            if (string.IsNullOrEmpty(uiAssetsRoot))
                 return;
 
-            var names = FairyGUIUtils.GetUIPackageFileNames(settings.runtimeSettings);
+            var names = FairyGUIUtils.GetUIPackageFileNames(uiAssetsRoot, uiByteSuffix);
             foreach (var name in names)
-                UIPackage.AddPackage(settings.runtimeSettings.uiAssetsRoot + "/" + name);
+                UIPackage.AddPackage(uiAssetsRoot + "/" + name);
         }
 
         private static string FormatId(string packageId, string objectId)
@@ -189,6 +190,7 @@ namespace GameFramework.FairyGUI.Editor
         public class UIComponent
         {
             public string Id { get; set; }
+            public string PackageName { get; set; }
             public string Name { get; set; }
             public Type ExtensionType { get; set; }
             public List<UIComponentNode> Nodes { get; set; }

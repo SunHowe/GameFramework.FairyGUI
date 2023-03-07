@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using FairyGUI;
+using FairyGUI.Utils;
 using GameFramework.FairyGUI.Runtime;
 
 namespace GameFramework.FairyGUI.Editor
@@ -56,6 +57,8 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent form,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
+            var className = form.PackageName.TitleCase().UpperFirst();
+
             GenerateBindingCode(settings,
                 form,
                 dictComponents,
@@ -65,8 +68,26 @@ namespace GameFramework.FairyGUI.Editor
                 settings.uiFormCodeNamespace,
                 settings.uiFormCodeExportRoot,
                 form.PackageName,
-                form.PackageName,
+                className,
                 settings.uiBindingCodeFileSuffix);
+
+            var onInitMethod = new CodeMemberMethod
+            {
+                Name = nameof(FairyGUIFormLogic.OnInit),
+                Attributes = MemberAttributes.Override | MemberAttributes.Public,
+                Parameters =
+                {
+                    new CodeParameterDeclarationExpression(typeof(FairyGUIForm), "uiForm"),
+                    new CodeParameterDeclarationExpression(typeof(object), "userData")
+                }
+            };
+
+            GenerateLogicCode(settings,
+                onInitMethod,
+                settings.uiFormCodeNamespace,
+                settings.uiFormCodeExportRoot,
+                form.PackageName,
+                className);
         }
 
         private static void GenerateUIComponentCode(
@@ -74,6 +95,8 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent component,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
+            var className = component.Name.TitleCase().UpperFirst();
+
             GenerateBindingCode(settings,
                 component,
                 dictComponents,
@@ -83,8 +106,25 @@ namespace GameFramework.FairyGUI.Editor
                 settings.uiComponentCodeNamespace,
                 settings.uiComponentCodeExportRoot,
                 component.PackageName,
-                component.Name,
+                className,
                 settings.uiBindingCodeFileSuffix);
+
+            var onInitMethod = new CodeMemberMethod
+            {
+                Name = nameof(GComponent.ConstructFromXML),
+                Attributes = MemberAttributes.Override | MemberAttributes.Public,
+                Parameters =
+                {
+                    new CodeParameterDeclarationExpression(typeof(XML), "xml"),
+                }
+            };
+
+            GenerateLogicCode(settings,
+                onInitMethod,
+                settings.uiComponentCodeNamespace,
+                settings.uiComponentCodeExportRoot,
+                component.PackageName,
+                className);
         }
 
         private static void GenerateBindingCode(
@@ -94,7 +134,6 @@ namespace GameFramework.FairyGUI.Editor
             Type baseType, MemberAttributes memberAttributes, CodeExpression contentPaneReferenceExpression,
             string namespaceStr, string root, string packageName, string name, string fileNameSuffix)
         {
-            name = name.TitleCase().UpperFirst();
             var declaration = new CodeTypeDeclaration
             {
                 Name = name,
@@ -116,7 +155,30 @@ namespace GameFramework.FairyGUI.Editor
 
             declaration.Members.Add(bindingMethod);
 
-            GenerateCodeFile(declaration, namespaceStr, root, packageName, name, fileNameSuffix);
+            GenerateCodeFile(declaration, namespaceStr, root, packageName, name, fileNameSuffix, true);
+        }
+
+        private static void GenerateLogicCode(
+            FairyGUIEditorSettings.FairyGUIExportSettings settings,
+            CodeMemberMethod method,
+            string namespaceStr, string root, string packageName, string name)
+        {
+            var path = FormatFilePath(root, packageName, name, string.Empty);
+            if (File.Exists(path))
+                return;
+
+            // logic code
+            var declaration = new CodeTypeDeclaration
+            {
+                Name = name,
+                TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
+                IsPartial = true,
+                IsClass = true,
+            };
+
+            method.Statements.Add(new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(new CodeThisReferenceExpression(), settings.uiBindingMethodName)));
+            declaration.Members.Add(method);
+            GenerateCodeFile(declaration, namespaceStr, root, packageName, name, string.Empty, false);
         }
 
         private static void AddNodeBindings(CodeTypeDeclaration declaration,
@@ -342,7 +404,7 @@ namespace GameFramework.FairyGUI.Editor
             }
         }
 
-        private static string GenerateCodeText(CodeCompileUnit codeCompileUnit)
+        private static string GenerateCodeText(CodeCompileUnit codeCompileUnit, bool keepAutoGenerateComment)
         {
             var stringBuilder = new StringBuilder();
             using TextWriter textWriter = new StringWriter(stringBuilder);
@@ -350,12 +412,16 @@ namespace GameFramework.FairyGUI.Editor
             var options = new CodeGeneratorOptions { BracingStyle = "C" };
             provider.GenerateCodeFromCompileUnit(codeCompileUnit, textWriter, options);
 
-            return stringBuilder.ToString();
+            var text = stringBuilder.ToString();
+            if (!keepAutoGenerateComment)
+                text = text.RemoveLines(10);
+            text = text.Replace("\r", string.Empty);
+            return text;
         }
 
-        private static void GenerateCodeFile(CodeCompileUnit codeCompileUnit, string root, string packageName, string name, string fileNameSuffix)
+        private static void GenerateCodeFile(CodeCompileUnit codeCompileUnit, string root, string packageName, string name, string fileNameSuffix, bool keepAutoGenerateComment)
         {
-            var codeText = GenerateCodeText(codeCompileUnit);
+            var codeText = GenerateCodeText(codeCompileUnit, keepAutoGenerateComment);
             var path = FormatFilePath(root, packageName, name, fileNameSuffix);
 
             var directory = Path.GetDirectoryName(path);
@@ -365,7 +431,7 @@ namespace GameFramework.FairyGUI.Editor
             File.WriteAllText(path, codeText, Encoding.UTF8);
         }
 
-        private static void GenerateCodeFile(CodeTypeDeclaration declaration, string namespaceStr, string root, string packageName, string name, string fileNameSuffix)
+        private static void GenerateCodeFile(CodeTypeDeclaration declaration, string namespaceStr, string root, string packageName, string name, string fileNameSuffix, bool keepAutoGenerateComment)
         {
             var codeNamespace = new CodeNamespace(FormatNamespace(namespaceStr, packageName));
             codeNamespace.Types.Add(declaration);
@@ -373,7 +439,7 @@ namespace GameFramework.FairyGUI.Editor
             var codeCompileUnit = new CodeCompileUnit();
             codeCompileUnit.Namespaces.Add(codeNamespace);
 
-            GenerateCodeFile(codeCompileUnit, root, packageName, name, fileNameSuffix);
+            GenerateCodeFile(codeCompileUnit, root, packageName, name, fileNameSuffix, keepAutoGenerateComment);
         }
 
         private static string FormatNamespace(string namespaceStr, string packageName)

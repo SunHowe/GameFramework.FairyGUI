@@ -56,29 +56,17 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent form,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
-            var declaration = new CodeTypeDeclaration
-            {
-                Name = form.Name.TitleCase().UpperFirst(),
-                TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
-                IsPartial = true,
-                IsClass = true,
-                BaseTypes = { new CodeTypeReference(typeof(FairyGUIFormLogic)) }
-            };
-
-            var bindingMethod = new CodeMemberMethod
-            {
-                Name = settings.uiBindingMethodName,
-                Attributes = MemberAttributes.Private,
-            };
-
-            var expressionContentPane = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "ContentPane");
-            AddNodeBindings(declaration, bindingMethod, settings, form.Nodes, dictComponents, MemberAttributes.Private, expressionContentPane);
-            AddTransitionBindings(declaration, bindingMethod, settings, form.Transitions, MemberAttributes.Private, expressionContentPane);
-            AddControllerBindings(declaration, bindingMethod, settings, form.Controllers, MemberAttributes.Private, expressionContentPane);
-
-            declaration.Members.Add(bindingMethod);
-
-            GenerateCodeFile(declaration, settings.uiFormCodeNamespace, settings.uiFormCodeExportRoot, form.PackageName, form.PackageName, settings.uiBindingCodeFileSuffix);
+            GenerateBindingCode(settings,
+                form,
+                dictComponents,
+                typeof(FairyGUIFormLogic),
+                MemberAttributes.Private,
+                new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "ContentPane"),
+                settings.uiFormCodeNamespace,
+                settings.uiFormCodeExportRoot,
+                form.PackageName,
+                form.PackageName,
+                settings.uiBindingCodeFileSuffix);
         }
 
         private static void GenerateUIComponentCode(
@@ -86,13 +74,34 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent component,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
+            GenerateBindingCode(settings,
+                component,
+                dictComponents,
+                component.ExtensionType,
+                MemberAttributes.Public,
+                new CodeThisReferenceExpression(),
+                settings.uiComponentCodeNamespace,
+                settings.uiComponentCodeExportRoot,
+                component.PackageName,
+                component.Name,
+                settings.uiBindingCodeFileSuffix);
+        }
+
+        private static void GenerateBindingCode(
+            FairyGUIEditorSettings.FairyGUIExportSettings settings,
+            FairyGUIComponentCollector.UIComponent component,
+            Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents,
+            Type baseType, MemberAttributes memberAttributes, CodeExpression contentPaneReferenceExpression,
+            string namespaceStr, string root, string packageName, string name, string fileNameSuffix)
+        {
+            name = name.TitleCase().UpperFirst();
             var declaration = new CodeTypeDeclaration
             {
-                Name = component.Name.TitleCase().UpperFirst(),
+                Name = name,
                 TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
                 IsPartial = true,
                 IsClass = true,
-                BaseTypes = { new CodeTypeReference(component.ExtensionType) }
+                BaseTypes = { new CodeTypeReference(baseType) }
             };
 
             var bindingMethod = new CodeMemberMethod
@@ -101,14 +110,13 @@ namespace GameFramework.FairyGUI.Editor
                 Attributes = MemberAttributes.Private,
             };
 
-            var expressionContentPane = new CodeThisReferenceExpression();
-            AddNodeBindings(declaration, bindingMethod, settings, component.Nodes, dictComponents, MemberAttributes.Public, expressionContentPane);
-            AddTransitionBindings(declaration, bindingMethod, settings, component.Transitions, MemberAttributes.Private, expressionContentPane);
-            AddControllerBindings(declaration, bindingMethod, settings, component.Controllers, MemberAttributes.Private, expressionContentPane);
-            
+            AddNodeBindings(declaration, bindingMethod, settings, component.Nodes, dictComponents, memberAttributes, contentPaneReferenceExpression);
+            AddTransitionBindings(declaration, bindingMethod, settings, component.Transitions, memberAttributes, contentPaneReferenceExpression);
+            AddControllerBindings(declaration, bindingMethod, settings, component.Controllers, memberAttributes, contentPaneReferenceExpression);
+
             declaration.Members.Add(bindingMethod);
 
-            GenerateCodeFile(declaration, settings.uiComponentCodeNamespace, settings.uiComponentCodeExportRoot, component.PackageName, component.Name, settings.uiBindingCodeFileSuffix);
+            GenerateCodeFile(declaration, namespaceStr, root, packageName, name, fileNameSuffix);
         }
 
         private static void AddNodeBindings(CodeTypeDeclaration declaration,
@@ -302,7 +310,7 @@ namespace GameFramework.FairyGUI.Editor
                     // enum property
                     var property = new CodeMemberProperty
                     {
-                        Name = memberAttributes.HasFlag(MemberAttributes.Public) ? enumName.UpperFirst() : enumName.LowerFirst(),
+                        Name = (memberAttributes.HasFlag(MemberAttributes.Public) ? enumName.UpperFirst() : enumName.LowerFirst()) + "Page",
                         Type = new CodeTypeReference(enumName),
                         HasGet = true,
                         HasSet = true,

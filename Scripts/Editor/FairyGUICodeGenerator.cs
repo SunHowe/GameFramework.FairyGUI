@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using FairyGUI;
+using GameFramework.FairyGUI.Runtime;
 
 namespace GameFramework.FairyGUI.Editor
 {
@@ -57,24 +58,26 @@ namespace GameFramework.FairyGUI.Editor
         {
             var declaration = new CodeTypeDeclaration
             {
-                Name = form.Name.TitleCase(),
+                Name = form.Name.TitleCase().UpperFirst(),
                 TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
                 IsPartial = true,
                 IsClass = true,
-                BaseTypes = { new CodeTypeReference(settings.uiFormBaseTypeName) }
+                BaseTypes = { new CodeTypeReference(typeof(FairyGUIFormLogic)) }
             };
-            
+
             var bindingMethod = new CodeMemberMethod
             {
-                Name = settings.uiBidingMethodName,
+                Name = settings.uiBindingMethodName,
                 Attributes = MemberAttributes.Private,
             };
 
-            var expressionContentPane = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), settings.uiFormContentPanePropertyName);
+            var expressionContentPane = new CodePropertyReferenceExpression(new CodeThisReferenceExpression(), "ContentPane");
             AddNodeBindings(declaration, bindingMethod, settings, form.Nodes, dictComponents, MemberAttributes.Private, expressionContentPane);
-            
+            AddTransitionBindings(declaration, bindingMethod, settings, form.Transitions, MemberAttributes.Private, expressionContentPane);
+            AddControllerBindings(declaration, bindingMethod, settings, form.Controllers, MemberAttributes.Private, expressionContentPane);
+
             declaration.Members.Add(bindingMethod);
-            
+
             GenerateCodeFile(declaration, settings.uiFormCodeNamespace, settings.uiFormCodeExportRoot, form.PackageName, form.PackageName, settings.uiBindingCodeFileSuffix);
         }
 
@@ -85,23 +88,26 @@ namespace GameFramework.FairyGUI.Editor
         {
             var declaration = new CodeTypeDeclaration
             {
-                Name = component.Name.TitleCase(),
+                Name = component.Name.TitleCase().UpperFirst(),
                 TypeAttributes = TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class,
                 IsPartial = true,
                 IsClass = true,
                 BaseTypes = { new CodeTypeReference(component.ExtensionType) }
             };
-            
+
             var bindingMethod = new CodeMemberMethod
             {
-                Name = settings.uiBidingMethodName,
+                Name = settings.uiBindingMethodName,
                 Attributes = MemberAttributes.Private,
             };
 
-            AddNodeBindings(declaration, bindingMethod, settings, component.Nodes, dictComponents, MemberAttributes.Public, new CodeThisReferenceExpression());
-
-            declaration.Members.Add(bindingMethod);
+            var expressionContentPane = new CodeThisReferenceExpression();
+            AddNodeBindings(declaration, bindingMethod, settings, component.Nodes, dictComponents, MemberAttributes.Public, expressionContentPane);
+            AddTransitionBindings(declaration, bindingMethod, settings, component.Transitions, MemberAttributes.Private, expressionContentPane);
+            AddControllerBindings(declaration, bindingMethod, settings, component.Controllers, MemberAttributes.Private, expressionContentPane);
             
+            declaration.Members.Add(bindingMethod);
+
             GenerateCodeFile(declaration, settings.uiComponentCodeNamespace, settings.uiComponentCodeExportRoot, component.PackageName, component.Name, settings.uiBindingCodeFileSuffix);
         }
 
@@ -111,7 +117,7 @@ namespace GameFramework.FairyGUI.Editor
             List<FairyGUIComponentCollector.UIComponentNode> nodes,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents,
             MemberAttributes memberAttributes,
-            CodeExpression getChildTargetExpression)
+            CodeExpression contentPaneReferenceExpression)
         {
             var defaultNameRegex = new Regex(@"^n\d+$");
 
@@ -120,12 +126,12 @@ namespace GameFramework.FairyGUI.Editor
                 var node = nodes[index];
                 if (node.ObjectType == ObjectType.Group)
                     continue;
-                
+
                 if (settings.ignoreDefaultNameChildren && defaultNameRegex.IsMatch(node.Name))
                     continue;
 
                 CodeTypeReference typeReference;
-                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? node.Name.TitleCase() : $"m_{node.Name.TitleCase()}";
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? node.Name.TitleCase().UpperFirst() : $"m_{node.Name.TitleCase().UpperFirst()}";
 
                 if (!string.IsNullOrEmpty(node.Ref) && dictComponents.TryGetValue(node.Ref, out var refComponent))
                 {
@@ -166,13 +172,163 @@ namespace GameFramework.FairyGUI.Editor
                 #region [binding method]
 
                 // GetChild(name)
-                var expressionGetChild = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(getChildTargetExpression, nameof(GComponent.GetChild)), new CodePrimitiveExpression(node.Name));
+                var expressionGetChild = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(contentPaneReferenceExpression, nameof(GComponent.GetChild)), new CodePrimitiveExpression(node.Name));
                 // (T)GetChild(name)
                 var expressionCast = new CodeCastExpression(typeReference, expressionGetChild);
                 // field = (T)GetChild(name)
                 var expressionAssign = new CodeAssignStatement(new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), fieldName), expressionCast);
 
                 bindingMethod.Statements.Add(expressionAssign);
+
+                #endregion
+            }
+        }
+
+        private static void AddTransitionBindings(CodeTypeDeclaration declaration,
+            CodeMemberMethod bindingMethod,
+            FairyGUIEditorSettings.FairyGUIExportSettings settings,
+            List<FairyGUIComponentCollector.UITransition> transitions,
+            MemberAttributes memberAttributes,
+            CodeExpression contentPaneReferenceExpression)
+        {
+            for (var index = 0; index < transitions.Count; index++)
+            {
+                var transition = transitions[index];
+
+                var typeReference = new CodeTypeReference(typeof(Transition));
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? transition.Name.TitleCase().UpperFirst() : $"m_{transition.Name.TitleCase().UpperFirst()}";
+                if (!string.IsNullOrEmpty(settings.uiTransitionCodeExportNameSuffix) && !fieldName.EndsWith(settings.uiTransitionCodeExportNameSuffix))
+                    fieldName += settings.uiTransitionCodeExportNameSuffix;
+
+                // field
+                declaration.Members.Add(new CodeMemberField(typeReference, fieldName)
+                {
+                    Attributes = memberAttributes
+                });
+
+                #region [binding method]
+
+                // GetTransition(name)
+                var expressionGetChild = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(contentPaneReferenceExpression, nameof(GComponent.GetTransition)), new CodePrimitiveExpression(transition.Name));
+                // field = GetTransition(name)
+                var expressionAssign = new CodeAssignStatement(new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), fieldName), expressionGetChild);
+
+                bindingMethod.Statements.Add(expressionAssign);
+
+                #endregion
+            }
+        }
+
+        private static void AddControllerBindings(CodeTypeDeclaration declaration,
+            CodeMemberMethod bindingMethod,
+            FairyGUIEditorSettings.FairyGUIExportSettings settings,
+            List<FairyGUIComponentCollector.UIController> controllers,
+            MemberAttributes memberAttributes,
+            CodeExpression contentPaneReferenceExpression)
+        {
+            for (var index = 0; index < controllers.Count; index++)
+            {
+                var controller = controllers[index];
+
+                var typeReference = new CodeTypeReference(typeof(Controller));
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? controller.Name.TitleCase().UpperFirst() : $"m_{controller.Name.TitleCase().UpperFirst()}";
+                if (!string.IsNullOrEmpty(settings.uiControllerCodeExportNameSuffix) && !fieldName.EndsWith(settings.uiControllerCodeExportNameSuffix))
+                    fieldName += settings.uiControllerCodeExportNameSuffix;
+
+                // field
+                declaration.Members.Add(new CodeMemberField(typeReference, fieldName)
+                {
+                    Attributes = memberAttributes
+                });
+
+                #region [binding method]
+
+                // GetController(name)
+                var expressionGetChild = new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(contentPaneReferenceExpression, nameof(GComponent.GetController)), new CodePrimitiveExpression(controller.Name));
+                // field = GetController(name)
+                var expressionAssign = new CodeAssignStatement(new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), fieldName), expressionGetChild);
+
+                bindingMethod.Statements.Add(expressionAssign);
+
+                #endregion
+
+                #region [controller page enum]
+
+                if (!string.IsNullOrEmpty(settings.uiControllerEnumNameSuffix))
+                {
+                    var enumName = controller.Name.TitleCase().UpperFirst() + settings.uiControllerEnumNameSuffix;
+                    var enumDeclaration = new CodeTypeDeclaration
+                    {
+                        Name = enumName,
+                        TypeAttributes = memberAttributes.HasFlag(MemberAttributes.Public) ? TypeAttributes.Public : TypeAttributes.NestedPrivate,
+                        IsEnum = true,
+                    };
+
+                    enumDeclaration.BaseTypes.Add(typeof(int));
+                    for (var i = 0; i < controller.Pages.Count; i++)
+                    {
+                        var defaultPageName = $"{controller.Name.TitleCase().UpperFirst()}_{i}";
+
+                        var pageName = controller.Pages[i];
+
+                        // 分页名为空的话 使用默认名称
+                        if (string.IsNullOrEmpty(pageName))
+                            pageName = defaultPageName;
+                        // 分页名首个字符必须为字母
+                        else if (!Regex.IsMatch(pageName, @"^[a-zA-Z]"))
+                            pageName = defaultPageName;
+                        // 分页名包含中文
+                        else if (Regex.IsMatch(pageName, @"[\u4e00-\u9fa5]"))
+                            pageName = defaultPageName;
+                        else
+                            pageName = FilterFieldName(pageName).TitleCase().UpperFirst();
+
+                        var enumMember = new CodeMemberField(enumName, pageName)
+                        {
+                            InitExpression = new CodePrimitiveExpression(i),
+                            Comments =
+                            {
+                                new CodeCommentStatement("<summary>", true),
+                                new CodeCommentStatement(pageName, true),
+                                new CodeCommentStatement("</summary>", true),
+                            }
+                        };
+
+                        enumDeclaration.Members.Add(enumMember);
+                    }
+
+                    declaration.Members.Add(enumDeclaration);
+
+                    // enum property
+                    var property = new CodeMemberProperty
+                    {
+                        Name = memberAttributes.HasFlag(MemberAttributes.Public) ? enumName.UpperFirst() : enumName.LowerFirst(),
+                        Type = new CodeTypeReference(enumName),
+                        HasGet = true,
+                        HasSet = true,
+                        Attributes = memberAttributes | MemberAttributes.Final,
+                        GetStatements =
+                        {
+                            // return (PageEnum)controller.selectedIndex;
+                            new CodeMethodReturnStatement(
+                                new CodeCastExpression(enumName,
+                                    new CodePropertyReferenceExpression(
+                                        new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), fieldName),
+                                        nameof(Controller.selectedIndex))))
+                        },
+                        SetStatements =
+                        {
+                            // controller.selectedIndex = (int)value;
+                            new CodeAssignStatement(
+                                new CodePropertyReferenceExpression(
+                                    new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), fieldName),
+                                    nameof(Controller.selectedIndex)),
+                                new CodeCastExpression(typeof(int), new CodePropertySetValueReferenceExpression()))
+                        }
+                    };
+
+                    declaration.Members.Add(property);
+                }
 
                 #endregion
             }
@@ -185,7 +341,7 @@ namespace GameFramework.FairyGUI.Editor
             var provider = CodeDomProvider.CreateProvider("csharp");
             var options = new CodeGeneratorOptions { BracingStyle = "C" };
             provider.GenerateCodeFromCompileUnit(codeCompileUnit, textWriter, options);
-            
+
             return stringBuilder.ToString();
         }
 
@@ -197,7 +353,7 @@ namespace GameFramework.FairyGUI.Editor
             var directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
-            
+
             File.WriteAllText(path, codeText, Encoding.UTF8);
         }
 
@@ -208,7 +364,7 @@ namespace GameFramework.FairyGUI.Editor
 
             var codeCompileUnit = new CodeCompileUnit();
             codeCompileUnit.Namespaces.Add(codeNamespace);
-            
+
             GenerateCodeFile(codeCompileUnit, root, packageName, name, fileNameSuffix);
         }
 
@@ -219,7 +375,7 @@ namespace GameFramework.FairyGUI.Editor
 
         private static string FormatTypeName(string namespaceStr, string packageName, string name)
         {
-            name = name.TitleCase();
+            name = name.TitleCase().UpperFirst();
             if (string.IsNullOrEmpty(namespaceStr))
                 return name;
 
@@ -229,16 +385,21 @@ namespace GameFramework.FairyGUI.Editor
 
         private static string FormatFilePath(string root, string packageName, string name, string fileNameSuffix)
         {
-            name = name.TitleCase();
+            name = name.TitleCase().UpperFirst();
             if (!string.IsNullOrEmpty(fileNameSuffix))
                 name += fileNameSuffix;
             name += ".cs";
 
             if (string.IsNullOrEmpty(root))
                 return name;
-            
+
             root = root.Replace(FairyGUIEditorSettings.FairyGUIExportSettings.StrReplaceKeyPackageName, packageName);
             return $"{root}/{name}";
+        }
+
+        private static string FilterFieldName(string fieldName)
+        {
+            return Regex.Replace(fieldName, "[^\\w]", "_");
         }
     }
 }

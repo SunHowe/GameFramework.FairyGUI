@@ -69,12 +69,6 @@ namespace GameFramework.FairyGUI.Editor
             [Header("UI窗体代码导出根目录(支持占位符{PackageName})")]
             public string uiFormCodeExportRoot = "Assets/GameMain/Scripts/Game.Hotfix.UI/{PackageName}/Form";
 
-            [Header("UI窗体基类")]
-            public string uiFormBaseTypeName = "GameFramework.FairyGUI.Runtime.FairyGUIFormLogic";
-
-            [Header("UI窗体视图实例属性名")]
-            public string uiFormContentPanePropertyName = "ContentPane";
-
             [Header("UI组件命名正则")]
             public string uiComponentNameRegex = "Component$";
 
@@ -88,13 +82,19 @@ namespace GameFramework.FairyGUI.Editor
             public string uiBindingCodeFileSuffix = ".Bindings";
 
             [Header("UI绑定代码函数名")]
-            public string uiBidingMethodName = "InitBindings";
+            public string uiBindingMethodName = "InitBindings";
             
             [Header("是否忽略默认名字的子节点(n+数字)")]
             public bool ignoreDefaultNameChildren = true;
 
-            [Header("是否生成控制器对应的枚举")]
-            public bool generateControllerEnum = true;
+            [Header("UI动效代码导出名字后缀")]
+            public string uiTransitionCodeExportNameSuffix = "Transition";
+
+            [Header("UI控制器代码导出名字后缀")]
+            public string uiControllerCodeExportNameSuffix = "Controller";
+
+            [Header("UI控制器生成枚举名字后缀(若为空则不生成枚举类)")]
+            public string uiControllerEnumNameSuffix = "PageEnum";
         }
     }
 }

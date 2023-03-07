@@ -15,5 +15,10 @@ namespace GameFramework.FairyGUI.Editor
         {
             return str[..1].ToLower() + str[1..];
         }
+
+        public static string UpperFirst(this string str)
+        {
+            return str[..1].ToUpper() + str[1..];
+        }
     }
 }

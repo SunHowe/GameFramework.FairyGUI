@@ -57,7 +57,7 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent form,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
-            var className = form.PackageName.TitleCase().UpperFirst();
+            var className = form.PackageName.ToTitleCase().UppercaseFirst();
 
             GenerateBindingCode(settings,
                 form,
@@ -104,7 +104,7 @@ namespace GameFramework.FairyGUI.Editor
             FairyGUIComponentCollector.UIComponent component,
             Dictionary<string, FairyGUIComponentCollector.UIComponent> dictComponents)
         {
-            var className = component.Name.TitleCase().UpperFirst();
+            var className = component.Name.ToTitleCase().UppercaseFirst();
 
             GenerateBindingCode(settings,
                 component,
@@ -210,7 +210,7 @@ namespace GameFramework.FairyGUI.Editor
                     continue;
 
                 CodeTypeReference typeReference;
-                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? node.Name.TitleCase().UpperFirst() : $"m_{node.Name.TitleCase().UpperFirst()}";
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? node.Name.ToTitleCase().UppercaseFirst() : $"m_{node.Name.ToTitleCase().UppercaseFirst()}";
 
                 if (!string.IsNullOrEmpty(node.Ref) && dictComponents.TryGetValue(node.Ref, out var refComponent))
                 {
@@ -275,7 +275,7 @@ namespace GameFramework.FairyGUI.Editor
                 var transition = transitions[index];
 
                 var typeReference = new CodeTypeReference(typeof(Transition));
-                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? transition.Name.TitleCase().UpperFirst() : $"m_{transition.Name.TitleCase().UpperFirst()}";
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? transition.Name.ToTitleCase().UppercaseFirst() : $"m_{transition.Name.ToTitleCase().UppercaseFirst()}";
                 if (!string.IsNullOrEmpty(settings.uiTransitionCodeExportNameSuffix) && !fieldName.EndsWith(settings.uiTransitionCodeExportNameSuffix))
                     fieldName += settings.uiTransitionCodeExportNameSuffix;
 
@@ -310,7 +310,7 @@ namespace GameFramework.FairyGUI.Editor
                 var controller = controllers[index];
 
                 var typeReference = new CodeTypeReference(typeof(Controller));
-                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? controller.Name.TitleCase().UpperFirst() : $"m_{controller.Name.TitleCase().UpperFirst()}";
+                var fieldName = memberAttributes.HasFlag(MemberAttributes.Public) ? controller.Name.ToTitleCase().UppercaseFirst() : $"m_{controller.Name.ToTitleCase().UppercaseFirst()}";
                 if (!string.IsNullOrEmpty(settings.uiControllerCodeExportNameSuffix) && !fieldName.EndsWith(settings.uiControllerCodeExportNameSuffix))
                     fieldName += settings.uiControllerCodeExportNameSuffix;
 
@@ -335,7 +335,7 @@ namespace GameFramework.FairyGUI.Editor
 
                 if (!string.IsNullOrEmpty(settings.uiControllerEnumNameSuffix))
                 {
-                    var enumName = controller.Name.TitleCase().UpperFirst() + settings.uiControllerEnumNameSuffix;
+                    var enumName = controller.Name.ToTitleCase().UppercaseFirst() + settings.uiControllerEnumNameSuffix;
                     var enumDeclaration = new CodeTypeDeclaration
                     {
                         Name = enumName,
@@ -346,7 +346,7 @@ namespace GameFramework.FairyGUI.Editor
                     enumDeclaration.BaseTypes.Add(typeof(int));
                     for (var i = 0; i < controller.Pages.Count; i++)
                     {
-                        var defaultPageName = $"{controller.Name.TitleCase().UpperFirst()}_{i}";
+                        var defaultPageName = $"{controller.Name.ToTitleCase().UppercaseFirst()}_{i}";
 
                         var pageName = controller.Pages[i];
 
@@ -360,7 +360,7 @@ namespace GameFramework.FairyGUI.Editor
                         else if (Regex.IsMatch(pageName, @"[\u4e00-\u9fa5]"))
                             pageName = defaultPageName;
                         else
-                            pageName = FilterFieldName(pageName).TitleCase().UpperFirst();
+                            pageName = FilterFieldName(pageName).ToTitleCase().UppercaseFirst();
 
                         var enumMember = new CodeMemberField(enumName, pageName)
                         {
@@ -381,7 +381,7 @@ namespace GameFramework.FairyGUI.Editor
                     // enum property
                     var property = new CodeMemberProperty
                     {
-                        Name = (memberAttributes.HasFlag(MemberAttributes.Public) ? enumName.UpperFirst() : enumName.LowerFirst()) + "Page",
+                        Name = (memberAttributes.HasFlag(MemberAttributes.Public) ? enumName.UppercaseFirst() : enumName.LowercaseFirst()) + "Page",
                         Type = new CodeTypeReference(enumName),
                         HasGet = true,
                         HasSet = true,
@@ -458,7 +458,7 @@ namespace GameFramework.FairyGUI.Editor
 
         private static string FormatTypeName(string namespaceStr, string packageName, string name)
         {
-            name = name.TitleCase().UpperFirst();
+            name = name.ToTitleCase().UppercaseFirst();
             if (string.IsNullOrEmpty(namespaceStr))
                 return name;
 
@@ -468,7 +468,7 @@ namespace GameFramework.FairyGUI.Editor
 
         private static string FormatFilePath(string root, string packageName, string name, string fileNameSuffix)
         {
-            name = name.TitleCase().UpperFirst();
+            name = name.ToTitleCase().UppercaseFirst();
             if (!string.IsNullOrEmpty(fileNameSuffix))
                 name += fileNameSuffix;
             name += ".cs";

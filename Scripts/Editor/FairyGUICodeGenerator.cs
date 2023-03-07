@@ -79,6 +79,15 @@ namespace GameFramework.FairyGUI.Editor
                 {
                     new CodeParameterDeclarationExpression(typeof(FairyGUIForm), "uiForm"),
                     new CodeParameterDeclarationExpression(typeof(object), "userData")
+                },
+                Statements =
+                {
+                    new CodeMethodInvokeExpression(
+                        new CodeBaseReferenceExpression(),
+                        nameof(FairyGUIFormLogic.OnInit),
+                        new CodeVariableReferenceExpression("uiForm"),
+                        new CodeVariableReferenceExpression("userData")
+                    )
                 }
             };
 
